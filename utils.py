@@ -22,7 +22,7 @@ class CallbackSource:
             self.callbacks[event] = []
 
     def on(self, event, cb, *args, **kwargs):
-        if type(cb).__name__ == "function":
+        if type(cb).__name__ in ("function", "bound_method"):
             cb = Callback(cb, *args, **kwargs)
         if type(cb).__name__ == "generator":
             cb = AsyncCallback(cb, *args, **kwargs)
@@ -33,7 +33,12 @@ class CallbackSource:
         asyncio.create_task(self.trigger_async(event, *args, **kwargs))
 
     async def trigger_async(self, event, *args, **kwargs):
-        tasks = [cb(*args, **kwargs) for cb in self.callbacks[event]]
-        if len(tasks) == 0:
-            return []
-        return await asyncio.gather(*tasks)
+        try:
+            tasks = [cb(*args, **kwargs) for cb in self.callbacks[event]]
+            if len(tasks) == 0:
+                return []
+            return await asyncio.gather(*tasks)
+        except:
+            print(event, self.callbacks[event])
+            print(tasks)
+            raise

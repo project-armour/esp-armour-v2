@@ -4,7 +4,7 @@ from machine import Pin
 
 
 class OutputPin(Pin):
-    def __init__(self, id, /):
+    def __init__(self, id):
         super().__init__(id, mode=Pin.OUT)
         self.task = None
 

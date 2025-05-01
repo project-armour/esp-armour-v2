@@ -7,7 +7,11 @@ class CommandHandler:
     async def handle_command(self, cmd):
         command = cmd.split()
         try:
-            return await self.commands[command[0]](cmd)
+            resp =  await self.commands[command[0]](cmd)
+            if resp is None:
+                return "ok"
+            else:
+                return resp
         except KeyError:
             return "nocmd"
         except:

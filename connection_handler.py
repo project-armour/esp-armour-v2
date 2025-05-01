@@ -58,17 +58,15 @@ class BluetoothHandler(CallbackSource):
             # Wait for a write operation on the LED characteristic.
             connection, data = await self.armour_control.written()
             cmd = data.decode().strip()
-            print(cmd)
             resp = await self.command_handler.handle_command(cmd)
-            print(resp)
-            await self.armour_control.notify(connection, resp, send_update=True)
+            self.armour_control.notify(connection, resp)
 
             # A small delay to yield control.
             await asyncio.sleep_ms(100)
 
     async def indicate(self, data):
         for connection in self.connections:
-            self.armour_control.indicate(connection, data)
+            await self.armour_control.indicate(connection, data)
 
     @staticmethod
     def _encode_int(i):

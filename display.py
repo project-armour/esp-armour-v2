@@ -12,7 +12,7 @@ class Display:
         self.lines = ["", "", ""]
         self.update()
 
-    def update(self):
+    def update(self, *args):
         self.display.fill(0)
         for i, line in enumerate(self.lines):
             self.display.text(line.format(**state.state), 0, i * 10 + 1)
