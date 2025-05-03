@@ -6,7 +6,7 @@ class Callback:
         self.args = args
         self.kwargs = kwargs
 
-    async def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs):
         return self.fn(*self.args, *args, **self.kwargs, **kwargs)
 
 class AsyncCallback(Callback):
@@ -30,15 +30,16 @@ class CallbackSource:
         self.callbacks[event].append(cb)
 
     def trigger(self, event, *args, **kwargs):
-        asyncio.create_task(self.trigger_async(event, *args, **kwargs))
+        tasks = [cb(*args, **kwargs) for cb in self.callbacks[event]]
+        tasks = [task for task in tasks if task is not None]
+        if len(tasks) == 0:
+            return
+        asyncio.create_task(asyncio.gather(*tasks))
 
     async def trigger_async(self, event, *args, **kwargs):
-        try:
-            tasks = [cb(*args, **kwargs) for cb in self.callbacks[event]]
-            if len(tasks) == 0:
-                return []
-            return await asyncio.gather(*tasks)
-        except:
-            print(event, self.callbacks[event])
-            print(tasks)
-            raise
+        tasks = [cb(*args, **kwargs) for cb in self.callbacks[event]]
+        tasks = [task for task in tasks if task is not None]
+        if len(tasks) == 0:
+            return []
+        await asyncio.gather(*tasks)
+
