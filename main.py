@@ -26,21 +26,21 @@ bt.on("connect", on_connect)
 async def single_press(bt):
     await bt.indicate("trg single")
 
-async def heart_rate_task():
-    while True:
-        bpm = heart_rate_sensor.get_bpm()
-        if bpm is None:
-            state.set('bpm', 'Undetected')
-        else:
-            state.set('bpm', bpm)
-        sleep_ms(500)
+def heart_rate_get(bpm):
+    if bpm is None:
+        state.set('bpm', 'Undetected')
+    else:
+        state.set('bpm', bpm)
+
+heart_rate_sensor.on("heart_rate", heart_rate_get)
 
 trigger.on('single', single_press, bt)
 
 async def main():
-    tasks = []
-    # tasks = bt.tasks
-    tasks.append(heart_rate_task())
+    tasks = bt.tasks
+    tasks.append(asyncio.create_task(heart_rate_sensor.mainloop()))
+    # tasks.append(asyncio.create_task(heart_rate_task()))
+    print(tasks)
     await asyncio.gather(*tasks)
 
 asyncio.run(main())
