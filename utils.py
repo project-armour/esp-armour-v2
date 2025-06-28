@@ -34,6 +34,8 @@ class CallbackSource:
         tasks = [task for task in tasks if task is not None]
         if len(tasks) == 0:
             return
+
+        print("callback triggered",  self.__class__.__name__, event)
         asyncio.create_task(asyncio.gather(*tasks))
 
     async def trigger_async(self, event, *args, **kwargs):
