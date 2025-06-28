@@ -2,6 +2,7 @@ import micropython
 from machine import Pin, ADC, Timer
 from time import ticks_diff, ticks_us, ticks_ms
 from asyncio import sleep_ms
+from state import config
 from max30102 import *
 
 from utils import CallbackSource
@@ -11,6 +12,10 @@ class HeartRate(CallbackSource):
     events = ('heart_rate',)
     def __init__(self, i2c, irq, sample_rate=100, window_size=150, smoothing_window=5, hr_compute_interval = 2):
         super().__init__()
+        self.disabled = config["heart_rate_disable"]
+
+        if self.disabled:
+            return
         self.i2c = i2c
         self.irq = Pin(irq, Pin.IN)
 
@@ -113,6 +118,9 @@ class HeartRate(CallbackSource):
 
     async def mainloop(self):
         while True:
+            if self.disabled:
+                return
+
             # The check() method has to be continuously polled, to check if
             # there are new readings into the sensor's FIFO queue. When new
             # readings are available, this function will put them into the storage.
