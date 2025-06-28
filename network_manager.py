@@ -1,16 +1,17 @@
 import network
 import asyncio
-from state import Config, State
+from state import config, state
 
 sta_if = network.WLAN(network.STA_IF)
 sta_if.active(True)
 
 class NetworkManager:
     def __init__(self):
-        self.network_config = Config["networking"]
+        self.network_config = config["networking"]
         self.networks = self.network_config["networks"]
         self.retry = self.network_config["retry_count"]
         self.connect_timeout = self.network_config["connect_timeout"]
+
     async def connect(self, ssid, password):
         for _ in range(self.retry):
             sta_if.connect(ssid, password)
@@ -29,7 +30,7 @@ class NetworkManager:
     async def network_loop(self):
         while True:
             if sta_if.isconnected():
-                asyncio.sleep_ms(1000)
+                await asyncio.sleep_ms(1000)
                 continue
             scan = sta_if.scan()
 

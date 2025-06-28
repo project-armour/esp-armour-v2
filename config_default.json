@@ -4,6 +4,6 @@
     "retry_count": 3,
     "connect_timeout": 1000
   },
-  "name": "ARMOR",
+  "name": "ARMOUR",
   "heart_rate_disable": true
 }
