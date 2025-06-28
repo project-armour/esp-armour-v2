@@ -24,8 +24,12 @@ class State(CallbackSource):
 
 class Config:
     def __init__(self):
+        with open('config_default.json') as defaultconfig:
+            self.config = load(defaultconfig)
         with open('config.json') as configfile:
-            self.config = load(configfile)
+            self.config.update(load(configfile))
+        with open('config.json', 'w') as configfile:
+            dump(self.config, configfile)
 
     def query(self, key, *args):
         return self[key]

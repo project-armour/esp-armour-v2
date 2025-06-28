@@ -9,4 +9,6 @@ mpremote cp main.py :main.py
 mpremote cp pin_device.py :pin_device.py
 mpremote cp state.py :state.py
 mpremote cp utils.py :utils.py
+mpremote cp network_manager.py :network_manager.py
+mpremote cp config_default.json :config_default.json
 mpremote reset

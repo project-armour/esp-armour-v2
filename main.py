@@ -4,10 +4,12 @@ from hardware import *
 from connection_handler import *
 from command_handler import *
 from state import *
+from network_manager import *
 
 cmd = CommandHandler()
-
+netman = NetworkManager()
 bt = BluetoothHandler(config['name'], cmd)
+
 state.set('status', "Off")
 state.set('bpm', 0)
 state.on('set', display.update)
@@ -39,6 +41,7 @@ trigger.on('single', single_press, bt)
 async def main():
     tasks = bt.tasks
     tasks.append(asyncio.create_task(heart_rate_sensor.mainloop()))
+    tasks.append(asyncio.create_task(netman.network_loop()))
     # tasks.append(asyncio.create_task(heart_rate_task()))
     print(tasks)
     await asyncio.gather(*tasks)
