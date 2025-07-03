@@ -25,8 +25,8 @@ def on_connect(device):
 bt.on("ready", on_ready)
 bt.on("connect", on_connect)
 
-async def single_press(bt):
-    await bt.indicate("trg single")
+async def button_press(bt, type):
+    await bt.indicate(f"trg ${type}")
 
 def heart_rate_get(bpm):
     if bpm is None:
@@ -36,7 +36,9 @@ def heart_rate_get(bpm):
 
 heart_rate_sensor.on("heart_rate", heart_rate_get)
 
-trigger.on('single', single_press, bt)
+trigger.on('single', button_press, bt, 'single')
+trigger.on('double', button_press, bt, 'double')
+trigger.on('long', button_press, bt, 'long')
 
 async def main():
     tasks = bt.tasks
