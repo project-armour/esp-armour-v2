@@ -10,7 +10,7 @@ from utils import CallbackSource
 
 
 class Button(CallbackSource):
-    events = ("single", "double", "long")
+    events = ("single", "long")
     def __init__(self, pin, debounce_interval=50, long_interval=2000, double_interval=300):
         super().__init__()
         self.pin = Pin(pin, mode=Pin.IN, pull=Pin.PULL_UP)
@@ -54,11 +54,4 @@ class Button(CallbackSource):
             elif td >= self.debounce_interval:
                 self.last_press = ticks_ms()
             self.flag.clear()
-            await sleep_ms(self.double_interval)
-            if (self.debounce_interval <= ticks_diff(self.last_rise, self.last_press) <= self.double_interval
-                    and ticks_diff(self.last_fall, self.last_rise) >= self.debounce_interval):
-                self.flag.clear()
-                self.last_press = 0
-                self.trigger('double')
-            else:
-                self.trigger('single')
+            self.trigger('single')
