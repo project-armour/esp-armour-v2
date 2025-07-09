@@ -10,7 +10,7 @@ from utils import CallbackSource
 
 
 class Button(CallbackSource):
-    events = ("single", "long")
+    events = ("single" , "long")
     def __init__(self, pin, debounce_interval=50, long_interval=2000, double_interval=300):
         super().__init__()
         self.pin = Pin(pin, mode=Pin.IN, pull=Pin.PULL_UP)
