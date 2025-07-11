@@ -28,6 +28,7 @@ bt.on("ready", bluetooth_ready)
 bt.on("connect", bluetooth_connect)
 
 async def button_press(bt, type):
+    print("button", type)
     await bt.indicate(f"trg ${type}")
 
 def heart_rate_get(bpm):
