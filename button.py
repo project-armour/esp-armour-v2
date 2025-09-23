@@ -11,9 +11,11 @@ from utils import CallbackSource
 
 class Button(CallbackSource):
     events = ("single" , "long")
+    eventdebug = True
+
     def __init__(self, pin, debounce_interval=50, long_interval=1500):
         super().__init__()
-        self.pin = Pin(pin, mode=Pin.IN)
+        self.pin = Pin(pin, mode=Pin.IN, pull=None)
 
         self.debounce_interval = debounce_interval
         self.long_interval = long_interval
@@ -21,30 +23,26 @@ class Button(CallbackSource):
         self.last_rise = 0
         self.last_fall = 0
 
-        self.flag = ThreadSafeFlag()
+        self.state = 0
 
-        self.pin.irq(self._irq)
         asyncio.create_task(self.loop())
-
-    def _irq(self, pin):
-        irq_status = disable_irq()
-        current_ticks = ticks_ms()
-        if pin.value() == 0:
-            self.last_rise = current_ticks
-        elif pin.value() == 1:
-            self.last_fall = current_ticks
-            self.flag.set()
-        enable_irq(irq_status)
 
 
     async def loop(self):
         while True:
-            await self.flag.wait()
-            td = ticks_diff(self.last_fall, self.last_rise)
-            if td <= 0:
-                continue
+            await asyncio.sleep_ms(50)
+            pv = self.pin.value()
+            if self.state == 0 and pv == 0:
+                self.last_rise = ticks_ms()
+                print(pv, self.state)
 
-            if td >= self.long_interval:
-                self.trigger('long')
-            else:
-                self.trigger('single')
+                self.state = 1
+            elif self.state == 1 and pv == 1:
+                self.last_fall = ticks_ms()
+                self.state = 0
+                print(pv, self.state)
+
+                if ticks_diff(self.last_fall, self.last_rise) > self.long_interval:
+                    self.trigger('long')
+                else:
+                    self.trigger('single')

@@ -15,6 +15,7 @@ class AsyncCallback(Callback):
 
 class CallbackSource:
     events = ()
+    eventdebug = False
 
     def __init__(self):
         self.callbacks = {}
@@ -30,6 +31,8 @@ class CallbackSource:
         self.callbacks[event].append(cb)
 
     def trigger(self, event, *args, **kwargs):
+        if self.eventdebug:
+            print("triggered", event, *args, **kwargs)
         tasks = [cb(*args, **kwargs) for cb in self.callbacks[event]]
         tasks = [task for task in tasks if task is not None]
         if len(tasks) == 0:

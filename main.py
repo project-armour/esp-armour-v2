@@ -39,8 +39,8 @@ def heart_rate_get(bpm):
 
 heart_rate_sensor.on("heart_rate", heart_rate_get)
 
-trigger.on('single', button_press, bt, 'single')
-trigger.on('long', button_press, bt, 'long')
+trigger.on('single', button_press, bt, 'long')
+fake_call.on('single', button_press, bt, 'single')
 
 def network_connected(ssid):
     state.set('network', ssid)
