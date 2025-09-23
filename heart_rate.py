@@ -7,142 +7,113 @@ from max30102 import *
 
 from utils import CallbackSource
 
+import micropython
+from machine import Pin, ADC, Timer
+from time import ticks_ms, ticks_diff
+
+
+
 
 class HeartRate(CallbackSource):
     events = ('heart_rate',)
-    def __init__(self, i2c, irq, sample_rate=100, window_size=150, smoothing_window=5, hr_compute_interval = 2):
+    def __init__(self, pin, threshold=37120):
         super().__init__()
         self.disabled = config["heart_rate_disable"]
 
         if self.disabled:
             return
-        self.i2c = i2c
-        self.irq = Pin(irq, Pin.IN)
+        self.pin = Pin(pin)
+        self.adc = ADC(self.pin, atten=ADC.ATTN_11DB)
 
-        self.sensor = MAX30102(i2c)
-        self.sensor.setup_sensor()
-        self.sensor.set_sample_rate(sample_rate * 8)
-        self.sensor.set_fifo_average(8)
-        self.sensor.set_active_leds_amplitude(MAX30105_PULSE_AMP_MEDIUM)
+        self.default_threshold = threshold
+        self.sample_interval_ms = 2
+        self.rate = [0] * 10
+        self.qs = False
+        self.ibi = 750
+        self.pulse = False
+        self.sample_counter = 0
+        self.last_beat_time = 0
+        self.p = 65536 // 2
+        self.t = 65536 // 2
+        self.thresh = self.default_threshold
+        self.amp = 65536 // 16
+        self.first_beat = True
+        self.second_beat = False
+        self.running_total = -1
+        self._isr_ref = self._isr
+        self.reset()
 
-        self.sample_rate = sample_rate
-        self.window_size = window_size
-        self.smoothing_window = smoothing_window
-        self.hr_compute_interval = 2
+        self.timer = Timer(0)
+        self.timer.init(period=self.sample_interval_ms, mode=Timer.PERIODIC, callback=self._isr)
 
-        self.samples = []
-        self.timestamps = []
-        self.filtered_samples = []
+    def reset(self):
+        for i in range(len(self.rate)):
+            self.rate[i] = 0
+        self.qs = False
+        self.ibi = 750
+        self.pulse = False
+        self.sample_counter = 0
+        self.last_beat_time = 0
+        self.p = 65536 // 2
+        self.t = 65536 // 2
+        self.thresh = self.default_threshold
+        self.amp = 65536 // 16
+        self.first_beat = True
+        self.second_beat = False
+        self.running_total = -1
 
-        self.heart_rate = None
-        self.ref_time = ticks_ms()
+    def _schedule_isr(self, _):
+        micropython.schedule(self._isr_ref, None)
 
-        if self.sensor.i2c_address not in i2c.scan():
-            print("Sensor not found.")
+    def _isr(self, _):
+        signal = self.adc.read_uv() << 4
+        self.sample_counter = ticks_ms()
+        N = ticks_diff(self.sample_counter, self.last_beat_time)
+        if signal == 49872000:
             return
+        print('isr', N, signal)
 
-    def add_sample(self, sample):
-        """Add a new sample to the monitor."""
-        timestamp = ticks_ms()
-        self.samples.append(sample)
-        self.timestamps.append(timestamp)
+        if signal < self.thresh and N > (self.ibi // 5) * 3:
+            if signal < self.t: self.t = signal
+        if signal > self.thresh and signal > self.p:
+            self.p = signal
 
-        # Apply smoothing
-        if len(self.samples) >= self.smoothing_window:
-            smoothed_sample = (
-                    sum(self.samples[-self.smoothing_window:]) / self.smoothing_window
-            )
-            self.filtered_samples.append(smoothed_sample)
-        else:
-            self.filtered_samples.append(sample)
+        if N > 250 and signal > self.thresh and not self.pulse and N > (self.ibi // 5) * 3:
+            self.pulse = True
+            self.ibi = self.sample_counter - self.last_beat_time
+            self.last_beat_time = self.sample_counter
 
-        # Maintain the size of samples and timestamps
-        if len(self.samples) > self.window_size:
-            self.samples.pop(0)
-            self.timestamps.pop(0)
-            self.filtered_samples.pop(0)
+            if self.second_beat:
+                self.second_beat = False
+                for i in range(10):
+                    self.rate[i] = self.ibi
 
-    def find_peaks(self):
-        """Find peaks in the filtered samples."""
-        peaks = []
-
-        if len(self.filtered_samples) < 3:  # Need at least three samples to find a peak
-            return peaks
-
-        # Calculate dynamic threshold based on the min and max of the recent window of filtered samples
-        recent_samples = self.filtered_samples[-self.window_size:]
-        min_val = min(recent_samples)
-        max_val = max(recent_samples)
-        threshold = (
-                min_val + (max_val - min_val) * 0.5
-        )  # 50% between min and max as a threshold
-
-        for i in range(1, len(self.filtered_samples) - 1):
-            if (
-                    self.filtered_samples[i] > threshold
-                    and self.filtered_samples[i - 1] < self.filtered_samples[i]
-                    and self.filtered_samples[i] > self.filtered_samples[i + 1]
-            ):
-                peak_time = self.timestamps[i]
-                peaks.append((peak_time, self.filtered_samples[i]))
-
-        return peaks
-
-    def calculate_heart_rate(self):
-        """Calculate the heart rate in beats per minute (BPM)."""
-        peaks = self.find_peaks()
-
-        if len(peaks) < 2:
-            return None  # Not enough peaks to calculate heart rate
-
-        # Calculate the average interval between peaks in milliseconds
-        intervals = []
-        for i in range(1, len(peaks)):
-            interval = ticks_diff(peaks[i][0], peaks[i - 1][0])
-            intervals.append(interval)
-
-        average_interval = sum(intervals) / len(intervals)
-
-        # Convert intervals to heart rate in beats per minute (BPM)
-        heart_rate = (
-            60000 // average_interval
-        )  # 60 seconds per minute * 1000 ms per second
-
-        if heart_rate > 300:
-            return None
-
-        return heart_rate
-
-    def get_heart_rate(self):
-        return self.heart_rate
-
-    async def mainloop(self):
-        while True:
-            if self.disabled:
+            if self.first_beat:
+                self.first_beat = False
+                self.second_beat = True
                 return
 
-            # The check() method has to be continuously polled, to check if
-            # there are new readings into the sensor's FIFO queue. When new
-            # readings are available, this function will put them into the storage.
-            self.sensor.check()
+            running_total = 0
+            for i in range(9):
+                self.rate[i] = self.rate[i + 1]
+                running_total += self.rate[i]
+            self.rate[9] = self.ibi
+            running_total += self.ibi
+            running_total //= 10
+            self.running_total = running_total
 
-            # Check if the storage contains available samples
-            while self.sensor.available():
-                # Access the storage FIFO and gather the readings (integers)
-                red_reading = self.sensor.pop_red_from_storage()
-                ir_reading = self.sensor.pop_ir_from_storage()
+        if signal > self.thresh and self.pulse:
+            self.pulse = False
+            self.amp = self.p - self.t
+            self.thresh = self.amp // 2 + self.t
+            self.p = self.thresh
+            self.t = self.thresh
 
-                # Add the IR reading to the heart rate monitor
-                # Note: based on the skin color, the red, IR or green LED can be used
-                # to calculate the heart rate with more accuracy.
-                print("Red:", red_reading)
-                self.add_sample(red_reading)
+        if N > 2500:
+            self.reset()
+            return
 
-            # Periodically calculate the heart rate every `hr_compute_interval` seconds
-            if ticks_diff(ticks_ms(), self.ref_time) / 1000 > self.hr_compute_interval:
-                # Calculate the heart rate
-                self.heart_rate = self.calculate_heart_rate()
-                # Reset the reference time
-                self.ref_time = ticks_ms()
-                self.trigger('heart_rate', self.heart_rate)
-            sleep_ms(20)
+    def get_bpm(self):
+        if self.running_total <= 0:
+            return None
+        return 60000 / self.running_total
