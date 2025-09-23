@@ -9,6 +9,6 @@ buzzer = OutputPin(5)
 flash = OutputPin(19)
 motor = OutputPin(21)
 i2c = SoftI2C(sda = Pin(16), scl = Pin(17))
-heart_rate_sensor = HeartRate(i2c, 23)
+heart_rate_sensor = HeartRate(pin=4)
 
 display = Display(i2c)
