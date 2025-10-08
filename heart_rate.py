@@ -10,14 +10,13 @@ from utils import CallbackSource
 
 class HeartRate(CallbackSource):
     events = ('heart_rate',)
-    def __init__(self, i2c, irq, sample_rate=100, window_size=150, smoothing_window=5, hr_compute_interval = 2):
+    def __init__(self, i2c, sample_rate=100, window_size=150, smoothing_window=5, hr_compute_interval = 2):
         super().__init__()
         self.disabled = config["heart_rate_disable"]
 
         if self.disabled:
             return
         self.i2c = i2c
-        self.irq = Pin(irq, Pin.IN)
 
         self.sensor = MAX30102(i2c)
         self.sensor.setup_sensor()
