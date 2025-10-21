@@ -11,4 +11,5 @@ mpremote cp state.py :state.py
 mpremote cp utils.py :utils.py
 mpremote cp network_manager.py :network_manager.py
 mpremote cp config_default.json :config_default.json
+mpremote cp -r bitmaps/ :/
 mpremote reset

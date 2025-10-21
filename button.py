@@ -13,9 +13,9 @@ class Button(CallbackSource):
     events = ("single" , "long")
     eventdebug = True
 
-    def __init__(self, pin, debounce_interval=50, long_interval=1500, name = ""):
+    def __init__(self, pin, debounce_interval=50, long_interval=1500, name = "", pull_up=None):
         super().__init__()
-        self.pin = Pin(pin, mode=Pin.IN, pull=None)
+        self.pin = Pin(pin, mode=Pin.IN, pull=pull_up)
 
         self.debounce_interval = debounce_interval
         self.long_interval = long_interval

@@ -24,13 +24,15 @@ def bluetooth_ready():
 
 def bluetooth_connect(device):
     state.set('status', "Connected")
+    display.set_bitmap("connected")
+    print("connected")
 
 bt.on("ready", bluetooth_ready)
 bt.on("connect", bluetooth_connect)
 
 async def button_press(bt, type):
     print("button", type)
-    state.set('button', f"{type} {randint(1,20000)}")
+    state.set('button', type)
     await bt.indicate(f"trg {type}")
 
 def heart_rate_get(bpm):
@@ -44,8 +46,8 @@ heart_rate_sensor.on("heart_rate", heart_rate_get)
 trigger.on('single', button_press, bt, 'short1')
 trigger.on('long', button_press, bt, 'long1')
 
-fake_call.on('single', button_press, bt, 'short1')
-fake_call.on('long', button_press, bt, 'short2')
+fake_call.on('single', button_press, bt, 'short2')
+fake_call.on('long', button_press, bt, 'long2')
 
 def network_connected(ssid):
     state.set('network', ssid)
