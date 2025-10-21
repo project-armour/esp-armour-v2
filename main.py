@@ -27,8 +27,13 @@ def bluetooth_connect(device):
     display.set_bitmap("connected")
     print("connected")
 
+def bluetooth_disconnect(device):
+    state.set('status', "Disconnected")
+    display.set_bitmap("logo")
+
 bt.on("ready", bluetooth_ready)
 bt.on("connect", bluetooth_connect)
+bt.on("disconnect", bluetooth_disconnect)
 
 async def button_press(bt, type):
     print("button", type)
