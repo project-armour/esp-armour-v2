@@ -13,7 +13,7 @@ class Button(CallbackSource):
     events = ("single" , "long")
     eventdebug = True
 
-    def __init__(self, pin, debounce_interval=50, long_interval=1500):
+    def __init__(self, pin, debounce_interval=50, long_interval=1500, name = ""):
         super().__init__()
         self.pin = Pin(pin, mode=Pin.IN, pull=None)
 
@@ -22,7 +22,7 @@ class Button(CallbackSource):
 
         self.last_rise = 0
         self.last_fall = 0
-
+        self.name = name
         self.state = 0
 
         asyncio.create_task(self.loop())
@@ -34,14 +34,10 @@ class Button(CallbackSource):
             pv = self.pin.value()
             if self.state == 0 and pv == 0:
                 self.last_rise = ticks_ms()
-                print(pv, self.state)
-
                 self.state = 1
             elif self.state == 1 and pv == 1:
                 self.last_fall = ticks_ms()
                 self.state = 0
-                print(pv, self.state)
-
                 if ticks_diff(self.last_fall, self.last_rise) > self.long_interval:
                     self.trigger('long')
                 else:

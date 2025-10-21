@@ -1,5 +1,5 @@
 import asyncio
-
+from random import *
 from hardware import *
 from connection_handler import *
 from command_handler import *
@@ -12,10 +12,11 @@ bt = BluetoothHandler(config['name'], cmd)
 
 state.set('status', "Off")
 state.set('bpm', 0)
+state.set('button', "")
 state.set('network', 'Disconnected')
 state.on('set', display.update)
 display.set_line(0, 'BT: {status}')
-display.set_line(1, 'BPM: {bpm}')
+display.set_line(1, 'Button: {button}')
 display.set_line(2, 'Net: {network}')
 
 def bluetooth_ready():
@@ -29,7 +30,8 @@ bt.on("connect", bluetooth_connect)
 
 async def button_press(bt, type):
     print("button", type)
-    await bt.indicate(f"trg ${type}")
+    state.set('button', f"{type} {randint(1,20000)}")
+    await bt.indicate(f"trg {type}")
 
 def heart_rate_get(bpm):
     if bpm is None:
@@ -39,8 +41,11 @@ def heart_rate_get(bpm):
 
 heart_rate_sensor.on("heart_rate", heart_rate_get)
 
-trigger.on('single', button_press, bt, 'long')
-fake_call.on('single', button_press, bt, 'single')
+trigger.on('single', button_press, bt, 'short1')
+trigger.on('long', button_press, bt, 'long1')
+
+fake_call.on('single', button_press, bt, 'short1')
+fake_call.on('long', button_press, bt, 'short2')
 
 def network_connected(ssid):
     state.set('network', ssid)

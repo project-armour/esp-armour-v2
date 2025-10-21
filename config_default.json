@@ -2,7 +2,8 @@
   "networking": {
     "networks": {},
     "retry_count": 3,
-    "connect_timeout": 1000
+    "connect_timeout": 1000,
+    "disable_autoconnect": true
   },
   "name": "ARMOUR",
   "heart_rate_disable": true

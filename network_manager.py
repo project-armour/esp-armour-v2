@@ -14,6 +14,7 @@ class NetworkManager(CallbackSource):
         self.networks = self.network_config["networks"]
         self.retry = self.network_config["retry_count"]
         self.connect_timeout = self.network_config["connect_timeout"]
+        self.disabled = self.network_config["disable_autoconnect"]
         self.blacklist = []
         self.disconnected = True
 
@@ -43,6 +44,8 @@ class NetworkManager(CallbackSource):
 
     async def network_loop(self):
         ticks = 0
+        if self.disabled:
+            return
         while True:
             if sta_if.isconnected():
                 await asyncio.sleep_ms(1000)

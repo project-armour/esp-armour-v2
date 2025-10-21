@@ -62,7 +62,7 @@ class BluetoothHandler(CallbackSource):
             self.armour_control.notify(connection, resp)
 
             # A small delay to yield control.
-            await asyncio.sleep_ms(100)
+            await asyncio.sleep_ms(500)
 
     async def indicate(self, data):
         for connection in self.connections:
