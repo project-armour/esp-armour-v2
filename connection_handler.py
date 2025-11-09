@@ -1,3 +1,4 @@
+"""Module for bluetooth connection handler"""
 import asyncio
 import struct
 
@@ -13,10 +14,11 @@ HEART_RATE_CHARACTERISTIC_UUID = bluetooth.UUID(0x2A37)
 _ADV_INTERVAL_US = 500_000
 
 class BluetoothHandler(CallbackSource):
-
+    """Handles bluetooth connections"""
     events = ("ready", "connect", "disconnect")
 
     def __init__(self, name, command_handler):
+        """Initializes Command Handler"""
         super().__init__()
         self.service = aioble.Service(SERVICE_UUID)
 
@@ -37,6 +39,7 @@ class BluetoothHandler(CallbackSource):
         ]
 
     async def ble_advertise(self):
+        """Advertises bluetooth service"""
         device_name = self.name
         while True:
             try:
@@ -51,9 +54,11 @@ class BluetoothHandler(CallbackSource):
                     
             except Exception as e:
                 print("Advertising error:", e)
+                raise e
             await asyncio.sleep_ms(500)
 
     async def handle_connection(self):
+        """Handles a new bluetooth connection"""
         while True:
             # Wait for a write operation on the LED characteristic.
             connection, data = await self.armour_control.written()
@@ -65,13 +70,16 @@ class BluetoothHandler(CallbackSource):
             await asyncio.sleep_ms(500)
 
     async def indicate(self, data):
+        """Sends data to connected clients"""
         for connection in self.connections:
             await self.armour_control.indicate(connection, data)
 
     @staticmethod
     def _encode_int(i):
+        """Encodes data into 4 bytes"""
         return struct.pack("<h", i)
 
     async def update_heart_rate(self, heart_rate):
+        """Updates heart rate characteristic"""
         await self.heart_rate_char.write(self._encode_int(heart_rate))
 

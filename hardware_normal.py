@@ -1,3 +1,5 @@
+"""Hardware definition, alternate"""
+
 from display import *
 from button import *
 from pin_device import *

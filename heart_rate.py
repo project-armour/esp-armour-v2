@@ -1,3 +1,4 @@
+"""Heart rate sensor"""
 import micropython
 from machine import Pin, ADC, Timer
 from time import ticks_diff, ticks_us, ticks_ms
@@ -9,8 +10,10 @@ from utils import CallbackSource
 
 
 class HeartRate(CallbackSource):
+    """Class for heart rate sensor MAX30102"""
     events = ('heart_rate',)
     def __init__(self, i2c, sample_rate=100, window_size=150, smoothing_window=5, hr_compute_interval = 2):
+        """Initialize sensor"""
         super().__init__()
         self.disabled = config["heart_rate_disable"]
 
@@ -113,9 +116,11 @@ class HeartRate(CallbackSource):
         return heart_rate
 
     def get_heart_rate(self):
+        """Gets value of heart rate"""
         return self.heart_rate
 
     async def mainloop(self):
+        """Polls the sensor and returns heart rate values"""
         while True:
             if self.disabled:
                 return

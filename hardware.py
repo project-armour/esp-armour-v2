@@ -1,13 +1,16 @@
+"""
+Hardware definition
+"""
+
 from display import *
 from button import *
 from pin_device import *
 from heart_rate import *
 import ssd1306
-import framebuf
 
 fake_call = Button(1, pull_up=Pin.PULL_UP)
-trigger = Button(18, pull_up=Pin.PULL_UP)
-buzzer = OutputPin(3)
+trigger = Button(18)
+buzzer = PWMPin(3)
 flash = OutputPin(19)
 motor = OutputPin(4)
 
