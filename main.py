@@ -8,7 +8,6 @@ from command_handler import *
 from state import *
 
 cmd = CommandHandler()
-netman = NetworkManager()
 bt = BluetoothHandler(config['name'], cmd)
 
 state.set('status', "Off")
