@@ -85,6 +85,7 @@ fake_call.on('long', button_press, bt, 'long2')
 
 
 async def main():
+    """Main loop"""
     tasks = bt.tasks
     tasks.append(asyncio.create_task(heart_rate_sensor.mainloop()))
     # tasks.append(asyncio.create_task(heart_rate_task()))
